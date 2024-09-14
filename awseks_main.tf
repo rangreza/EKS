@@ -28,7 +28,7 @@ module "eks" {
   cluster_name    = "my-eks-cluster"
   cluster_version = "1.27"
   vpc_id          = module.vpc.vpc_id
-  vpc_subnets     = [module.vpc.public_subnets[0], module.vpc.private_subnets[0]]  # Only 1 public and 1 private subnet
+  subnet_ids      = [module.vpc.public_subnets[0], module.vpc.private_subnets[0]]  # Only 1 public and 1 private subnet
 
   enable_irsa = true
 
@@ -50,7 +50,7 @@ module "eks_managed_node_group" {
   min_size       = 1
 
   vpc_id  = module.vpc.vpc_id
-  subnets = module.vpc.private_subnets
+  subnet_ids = module.vpc.private_subnets
 
   tags = {
     Name = "eks-node-group"
