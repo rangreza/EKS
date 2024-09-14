@@ -17,17 +17,17 @@ jobs:
       - name: 'Checkout Code'
         uses: actions/checkout@v3
 
-      - name: 'Set up Terraform'
-        uses: hashicorp/setup-terraform@v2
-        with:
-          terraform_version: 1.5.2
-
       - name: 'Configure AWS Credentials'
         uses: aws-actions/configure-aws-credentials@v1
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: us-west-2  # Update this to your desired AWS region
+          aws-region: ap-south-1                # Set to ap-south-1
+
+      - name: 'Set up Terraform'
+        uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_version: 1.5.2
 
       - name: 'Terraform Init'
         run: terraform init
