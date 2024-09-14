@@ -39,7 +39,7 @@ module "eks" {
 
 module "eks_managed_node_group" {
   source  = "terraform-aws-modules/eks/aws//modules/eks-managed-node-group"
-  version = "20.13.0"  # Use the same version as the eks module
+  version = "20.13.0"
 
   cluster_name = module.eks.cluster_name
 
@@ -48,7 +48,7 @@ module "eks_managed_node_group" {
       desired_capacity = 2
       max_capacity     = 3
       min_capacity     = 1
-      instance_types   = ["t3.medium"]  # Note the plural form
+      instance_types   = ["t3.medium"]  # Use plural form
     }
   }
 
