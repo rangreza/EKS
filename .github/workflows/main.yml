@@ -40,3 +40,9 @@ jobs:
 
       - name: Terraform Apply
         run: terraform apply -auto-approve
+
+      # Uncomment the lines below to destroy the infrastructure
+       - name: Terraform Destroy
+         run: terraform destroy -auto-approve
+         env:
+           TF_VAR_my_secret: ${{ secrets.MY_SECRET }}
