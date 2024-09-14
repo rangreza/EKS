@@ -40,21 +40,24 @@ module "eks" {
 
 # EKS Managed Node Group
 module "eks_node_group" {
-  source          = "terraform-aws-modules/eks/aws//modules/eks-managed-node-group"
-  version         = "18.29.0"
+  source = "terraform-aws-modules/eks/aws//modules/eks-managed-node-group"
+  
+  cluster_name = module.eks.cluster_name
+  
+  node_groups = {
+    default = {
+      desired_capacity = 2
+      max_capacity     = 3
+      min_capacity     = 1
 
-  cluster_name    = module.eks.cluster_name
-  node_group_name = "my-eks-node-group"
-  node_group_iam_role_name = "eks-node-group-role"
+      instance_type = "t3.medium"
+      key_name      = "your-ec2-keypair"
 
-  instance_types = ["t3.medium"]
-  desired_size   = 2
-  max_size       = 3
-  min_size       = 1
+      tags = {
+        Name = "eks-node-group"
+      }
+    }
+  }
 
   subnet_ids = module.vpc.private_subnets
-
-  tags = {
-    Name = "eks-node-group"
-  }
 }
