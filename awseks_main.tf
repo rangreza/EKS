@@ -39,18 +39,18 @@ module "eks" {
 
 module "eks_managed_node_group" {
   source  = "terraform-aws-modules/eks/aws//modules/eks-managed-node-group"
-  version = "20.8.4"
+  version = "20.8.4"  # Updated to match the eks module version
 
   cluster_name = module.eks.cluster_name
-  node_group_name = "my-managed-node-group"
-  
-  # Define the node group details
-  desired_capacity = 2
-  max_capacity     = 3
-  min_capacity     = 1
-  instance_type    = "t3.medium"
+  node_group_defaults = {
+    desired_size = 2
+    max_size     = 3
+    min_size     = 1
+  }
 
-  subnet_ids = module.vpc.private_subnets
+  instance_types = ["t3.medium"]  # This is the correct argument
+  vpc_id         = module.vpc.vpc_id
+  subnet_ids     = module.vpc.private_subnets
 
   tags = {
     Name = "eks-node-group"
