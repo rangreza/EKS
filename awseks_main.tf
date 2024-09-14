@@ -1,7 +1,8 @@
 provider "aws" {
-  region = "us-west-2"  # Change region as needed
+  region = "us-west-2"
 }
 
+# VPC Module (unchanged)
 module "vpc" {
   source  = "terraform-aws-modules/vpc/aws"
   version = "3.11.0"
@@ -19,12 +20,15 @@ module "vpc" {
   }
 }
 
+# EKS Module - Adjusted to match module version >= 18.0.0
 module "eks" {
   source          = "terraform-aws-modules/eks/aws"
+  version         = "18.29.0"  # Use the latest stable version
+
   cluster_name    = "eks-cluster"
   cluster_version = "1.23"
-  subnets         = module.vpc.private_subnets
   vpc_id          = module.vpc.vpc_id
+  subnet_ids      = module.vpc.private_subnets  # Corrected argument name
 
   node_groups = {
     eks_nodes = {
