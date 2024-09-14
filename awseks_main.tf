@@ -9,9 +9,9 @@ module "vpc" {
   name = "my-vpc"
   cidr = "10.0.0.0/16"
 
-  azs             = ["ap-south-1a", "ap-south-1b"]
-  public_subnets  = ["10.0.1.0/24"]
-  private_subnets = ["10.0.2.0/24"]
+  azs             = ["ap-south-1a", "ap-south-1b", "ap-south-1c"]
+  public_subnets  = ["10.0.1.0/24", "10.0.2.0/24", "10.0.3.0/24"]
+  private_subnets = ["10.0.4.0/24", "10.0.5.0/24", "10.0.6.0/24"]
 
   enable_dns_hostnames = true
   enable_dns_support   = true
@@ -28,7 +28,7 @@ module "eks" {
   cluster_name    = "my-eks-cluster"
   cluster_version = "1.27"
   vpc_id          = module.vpc.vpc_id
-  subnet_ids      = concat(module.vpc.public_subnets, module.vpc.private_subnets)  # Include both public and private subnets
+  subnet_ids      = concat(module.vpc.public_subnets, module.vpc.private_subnets)  # Use all subnets
 
   enable_irsa = true
 
@@ -37,49 +37,24 @@ module "eks" {
   }
 }
 
-resource "aws_iam_role" "node_role" {
-  name = "eks-node-role"
+resource "aws_security_group_rule" "allow_ssh" {
+  type        = "ingress"
+  from_port   = 22
+  to_port     = 22
+  protocol    = "tcp"
+  cidr_blocks = ["0.0.0.0/0"]  # Adjust this for security purposes
 
-  assume_role_policy = jsonencode({
-    Version = "2012-10-17",
-    Statement = [
-      {
-        Action    = "sts:AssumeRole",
-        Effect    = "Allow",
-        Principal = {
-          Service = "ec2.amazonaws.com"
-        }
-      }
-    ]
-  })
+  security_group_id = module.vpc.default_security_group_id
 }
 
-resource "aws_iam_role_policy_attachment" "node_role_attachment" {
-  role       = aws_iam_role.node_role.name
-  policy_arn  = "arn:aws:iam::aws:policy/AmazonEKSWorkerNodePolicy"
-}
+resource "aws_security_group_rule" "allow_ssh_eks" {
+  type        = "ingress"
+  from_port   = 22
+  to_port     = 22
+  protocol    = "tcp"
+  cidr_blocks = ["0.0.0.0/0"]  # Adjust this for security purposes
 
-resource "aws_iam_role_policy_attachment" "node_role_attachment_2" {
-  role       = aws_iam_role.node_role.name
-  policy_arn  = "arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly"
-}
-
-resource "aws_eks_node_group" "default" {
-  cluster_name    = module.eks.cluster_name
-  node_group_name = "default-node-group"
-  node_role_arn   = aws_iam_role.node_role.arn
-  subnet_ids      = module.vpc.private_subnets
-  instance_types  = ["t3.medium"]
-
-  scaling_config {
-    desired_size = 2
-    max_size     = 3
-    min_size     = 1
-  }
-
-  tags = {
-    Name = "eks-node-group"
-  }
+  security_group_id = module.eks.cluster_security_group_id
 }
 
 output "cluster_endpoint" {
