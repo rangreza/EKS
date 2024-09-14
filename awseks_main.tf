@@ -1,72 +1,119 @@
+# Configure AWS credentials and region
 provider "aws" {
-  region = "ap-south-1"
+  region = "us-east-1" # Replace with your desired region
 }
 
-module "vpc" {
-  source  = "terraform-aws-modules/vpc/aws"
-  version = "3.19.0"
+# Define variables for customization
+variable "eks_cluster_name" {
+  type        = string
+  default     = "my-eks-cluster"
+}
 
-  name = "my-vpc"
-  cidr = "10.0.0.0/16"
+variable "vpc_cidr_block" {
+  type        = string
+  default     = "10.0.0.0/16"
+}
 
-  azs             = ["ap-south-1a", "ap-south-1b"]
-  public_subnets  = ["10.0.1.0/24"]
-  private_subnets = ["10.0.2.0/24"]
+variable "subnet_cidr_blocks" {
+  type        = list(string)
+  default     = ["10.0.0.0/24", "10.0.1.0/24"]
+}
 
-  enable_dns_hostnames = true
-  enable_dns_support   = true
+# Create VPC
+resource "aws_vpc" "main" {
+  cidr_block = var.vpc_cidr_block
+}
 
-  tags = {
-    Name = "my-vpc"
+# Create subnets
+resource "aws_subnet" "public" {
+  vpc_id            = aws_vpc.main.id
+  cidr_block        = var.subnet_cidr_blocks[0]
+  availability_zone = "us-east-1a" # Replace with your desired availability zone
+}
+
+resource "aws_subnet" "private" {
+  vpc_id            = aws_vpc.main.id
+  cidr_block        = var.subnet_cidr_blocks[1]
+  availability_zone = "us-east-1b" # Replace with your desired availability zone
+}
+
+# Create internet gateway
+resource "aws_internet_gateway" "ig" {
+  vpc_id = aws_vpc.main.id
+}
+
+# Attach internet gateway to VPC
+resource "aws_vpc_attachment" "ig_attachment" {
+  vpc_id             = aws_vpc.main.id
+  internet_gateway_id = aws_internet_gateway.ig.id
+}
+
+# Create route table for public subnet
+resource "aws_route_table" "public" {
+  vpc_id = aws_vpc.main.id
+}
+
+# Create route for internet gateway
+resource "aws_route" "public_internet_gateway" {
+  route_table_id     = aws_route_table.public.id
+  destination_cidr_block = "0.0.0.0/0"
+  gateway_id         = aws_internet_gateway.ig.id
+}
+
+# Create route table for private subnet
+resource "aws_route_table" "private" {
+  vpc_id = aws_vpc.main.id
+}
+
+# Associate route tables with subnets
+resource "aws_subnet_route_table_association" "public" {
+  subnet_id      = aws_subnet.public.id
+  route_table_id = aws_route_table.public.id
+}
+
+resource "aws_subnet_route_table_association" "private" {
+  subnet_id      = aws_subnet.private.id
+  route_table_id = aws_route_table.private.id
+}
+
+# Create security group for EKS nodes
+resource "aws_security_group" "eks_nodes" {
+  name        = "eks-nodes"
+  description = "Security group for EKS nodes"
+  vpc_id      = aws_vpc.main.id
+
+  ingress {
+    from_port   = 22
+    to_port     = 22
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  ingress {
+    from_port   = 443
+    to_port     = 443
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
   }
 }
 
-module "eks" {
-  source  = "terraform-aws-modules/eks/aws"
-  version = "18.29.0"
-
-  cluster_name    = "my-eks-cluster"
-  cluster_version = "1.27"
-  vpc_id          = module.vpc.vpc_id
-  subnet_ids      = [module.vpc.public_subnets[0], module.vpc.private_subnets[0]]  # Only 1 public and 1 private subnet
-
-  enable_irsa = true
-
-  tags = {
-    Name = "eks-cluster"
+# Create EKS cluster
+resource "aws_eks_cluster" "main" {
+  name         = var.eks_cluster_name
+  vpc_config {
+    subnet_ids = [
+      aws_subnet.public.id,
+      aws_subnet.private.id
+    ]
+    security_group_ids = [
+      aws_security_group.eks_nodes.id
+    ]
   }
-}
-
-module "eks_managed_node_group" {
-  source  = "terraform-aws-modules/eks/aws//modules/eks-managed-node-group"
-  version = "18.29.0"
-
-  cluster_name = module.eks.cluster_name
-
-  # Define the node group
-  node_groups = {
-    default = {
-      desired_capacity = 2
-      max_capacity     = 3
-      min_capacity     = 1
-      instance_type    = "t3.medium"
-    }
-  }
-
-  vpc_id     = module.vpc.vpc_id
-  subnet_ids = module.vpc.private_subnets
-
-  tags = {
-    Name = "eks-node-group"
-  }
-}
-
-output "cluster_endpoint" {
-  description = "EKS cluster endpoint"
-  value       = module.eks.cluster_endpoint
-}
-
-output "cluster_security_group_id" {
-  description = "EKS cluster security group ID"
-  value       = module.eks.cluster_security_group_id
 }
