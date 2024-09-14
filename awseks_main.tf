@@ -28,7 +28,7 @@ module "eks" {
   cluster_name    = "my-eks-cluster"
   cluster_version = "1.27"
   vpc_id          = module.vpc.vpc_id
-  subnet_ids      = [module.vpc.public_subnets[0], module.vpc.private_subnets[0]]  # Only 1 public and 1 private subnet
+  subnet_ids      = concat(module.vpc.public_subnets, module.vpc.private_subnets)  # Include both public and private subnets
 
   enable_irsa = true
 
@@ -42,16 +42,13 @@ module "eks_managed_node_group" {
   version = "20.8.4"
 
   cluster_name = module.eks.cluster_name
-  vpc_id       = module.vpc.vpc_id
-  subnet_ids   = module.vpc.private_subnets
 
-  # Define the node group settings inside a node_groups map
   node_groups = {
     default = {
       desired_capacity = 2
       max_capacity     = 3
       min_capacity     = 1
-      instance_type    = "t3.medium"
+      instance_types   = ["t3.medium"]
     }
   }
 
