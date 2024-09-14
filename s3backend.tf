@@ -1,7 +1,9 @@
 terraform {
   backend "s3" {
-    bucket = "my-tf-state-bucket"
-    key    = "eks-cluster/terraform.tfstate"
-    region = "us-west-2"
+    bucket         = "tfstate"
+    key            = "path/to/your/statefile.tfstate"
+    region         = "us-west-2"
+    encrypt        = true
+    dynamodb_table = "dynamolck"
   }
 }
