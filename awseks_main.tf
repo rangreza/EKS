@@ -1,6 +1,7 @@
 provider "aws" {
-  region = "us-west-2"
+  region = "ap-south-1"                      # Set to ap-south-1
 }
+
 
 # VPC Module (unchanged)
 module "vpc" {
