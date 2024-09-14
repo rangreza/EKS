@@ -4,7 +4,7 @@ provider "aws" {
 
 module "vpc" {
   source  = "terraform-aws-modules/vpc/aws"
-  version = "4.13.1"  # Use the latest version
+  version = "5.13.0"
 
   name = "my-vpc"
   cidr = "10.0.0.0/16"
@@ -23,12 +23,12 @@ module "vpc" {
 
 module "eks" {
   source  = "terraform-aws-modules/eks/aws"
-  version = "20.13.0"  # Use the latest version
+  version = "20.13.0"
 
   cluster_name    = "my-eks-cluster"
   cluster_version = "1.27"
   vpc_id          = module.vpc.vpc_id
-  subnet_ids      = concat(module.vpc.public_subnets, module.vpc.private_subnets)  # Both public and private subnets
+  subnet_ids      = concat(module.vpc.public_subnets, module.vpc.private_subnets)  # Use concat to include both public and private subnets
 
   enable_irsa = true
 
@@ -39,16 +39,16 @@ module "eks" {
 
 module "eks_managed_node_group" {
   source  = "terraform-aws-modules/eks/aws//modules/eks-managed-node-group"
-  version = "20.13.0"  # Use the latest version
+  version = "20.13.0"  # Use the same version as the eks module
 
   cluster_name = module.eks.cluster_name
 
   node_groups = {
-    managed_node_group = {
+    default = {
       desired_capacity = 2
       max_capacity     = 3
       min_capacity     = 1
-      instance_types   = ["t3.medium"]
+      instance_types   = ["t3.medium"]  # Note the plural form
     }
   }
 
