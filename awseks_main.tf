@@ -30,7 +30,7 @@ module "eks" {
   cluster_name    = "my-eks-cluster"
   cluster_version = "1.26"
   vpc_id          = module.vpc.vpc_id
-  vpc_subnets     = module.vpc.private_subnets
+  subnet_ids      = module.vpc.private_subnets  # Updated argument
 
   tags = {
     Environment = "dev"
@@ -53,7 +53,7 @@ module "eks_node_group" {
   }
 
   instance_types = ["t3.medium"]
-  subnets        = module.vpc.private_subnets
+  subnet_ids     = module.vpc.private_subnets  # Updated argument
 
   tags = {
     Name = "eks-node-group"
