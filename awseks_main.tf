@@ -27,27 +27,42 @@ module "eks" {
 
   cluster_name    = "my-eks-cluster"
   cluster_version = "1.27"
-  subnets         = concat(module.vpc.public_subnets, module.vpc.private_subnets)
   vpc_id          = module.vpc.vpc_id
+  vpc_subnets     = [module.vpc.public_subnets[0], module.vpc.private_subnets[0]]  # Only 1 public and 1 private subnet
 
   enable_irsa = true
-  manage_aws_auth = true
+
+  tags = {
+    Name = "eks-cluster"
+  }
 }
 
 module "eks_managed_node_group" {
   source  = "terraform-aws-modules/eks/aws//modules/eks-managed-node-group"
   version = "18.29.0"
 
-  cluster_name = module.eks.cluster_id
+  cluster_name    = module.eks.cluster_name
   node_group_name = "my-managed-node-group"
-
-  node_group_defaults = {
-    instance_type = "t3.medium"
-    desired_capacity = 2
-    max_capacity     = 3
-    min_capacity     = 1
-  }
+  
+  instance_types = ["t3.medium"]
+  desired_size   = 2
+  max_size       = 3
+  min_size       = 1
 
   vpc_id  = module.vpc.vpc_id
   subnets = module.vpc.private_subnets
+
+  tags = {
+    Name = "eks-node-group"
+  }
+}
+
+output "cluster_endpoint" {
+  description = "EKS cluster endpoint"
+  value       = module.eks.cluster_endpoint
+}
+
+output "cluster_security_group_id" {
+  description = "EKS cluster security group ID"
+  value       = module.eks.cluster_security_group_id
 }
