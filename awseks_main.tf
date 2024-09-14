@@ -44,16 +44,17 @@ module "eks_node_group" {
   version = "18.29.0"
 
   cluster_name = module.eks.cluster_name
-  node_group_name = "my-eks-node-group"
 
-  node_group_defaults = {
-    desired_capacity = 2
-    max_capacity     = 3
-    min_capacity     = 1
+  node_groups = {
+    default = {
+      desired_capacity = 2
+      max_capacity     = 3
+      min_capacity     = 1
+
+      instance_type = "t3.medium"
+      subnet_ids    = module.vpc.private_subnets
+    }
   }
-
-  instance_types = ["t3.medium"]
-  subnet_ids     = module.vpc.private_subnets  # Updated argument
 
   tags = {
     Name = "eks-node-group"
