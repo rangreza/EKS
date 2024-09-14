@@ -22,7 +22,7 @@ module "vpc" {
   }
 }
 
-# EKS Cluster
+# EKS Cluster (without node_groups argument)
 module "eks" {
   source          = "terraform-aws-modules/eks/aws"
   version         = "18.29.0"
@@ -32,23 +32,29 @@ module "eks" {
   vpc_id          = module.vpc.vpc_id
   subnet_ids      = module.vpc.private_subnets
 
-  node_groups = {
-    default = {
-      desired_capacity = 2
-      max_capacity     = 3
-      min_capacity     = 1
-
-      instance_type = "t3.medium"
-      key_name      = "your-ec2-keypair"
-
-      tags = {
-        Name = "eks-node-group"
-      }
-    }
-  }
-
   tags = {
     Environment = "dev"
     Name        = "eks-cluster"
+  }
+}
+
+# Managed Node Group
+module "eks_managed_node_group" {
+  source  = "terraform-aws-modules/eks/aws//modules/eks-managed-node-group"
+  version = "18.29.0"
+
+  cluster_name = module.eks.cluster_name
+  subnet_ids   = module.vpc.private_subnets
+
+  node_group_name = "my-eks-node-group"
+  node_group_defaults = {
+    instance_type = "t3.medium"
+    desired_capacity = 2
+    max_capacity     = 3
+    min_capacity     = 1
+  }
+
+  tags = {
+    Name = "eks-node-group"
   }
 }
