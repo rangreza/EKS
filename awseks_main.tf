@@ -38,7 +38,7 @@ module "eks" {
   }
 }
 
-# Managed Node Group
+# Managed Node Group Configuration
 module "eks_managed_node_group" {
   source  = "terraform-aws-modules/eks/aws//modules/eks-managed-node-group"
   version = "18.29.0"
@@ -46,12 +46,13 @@ module "eks_managed_node_group" {
   cluster_name = module.eks.cluster_name
   subnet_ids   = module.vpc.private_subnets
 
-  node_group_name = "my-eks-node-group"
-  node_group_defaults = {
-    instance_type = "t3.medium"
-    desired_capacity = 2
-    max_capacity     = 3
-    min_capacity     = 1
+  node_groups = {
+    eks_node_group = {
+      desired_capacity = 2
+      max_capacity     = 3
+      min_capacity     = 1
+      instance_type    = "t3.medium"
+    }
   }
 
   tags = {
