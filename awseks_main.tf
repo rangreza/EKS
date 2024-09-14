@@ -30,20 +30,8 @@ module "eks" {
   cluster_name    = "my-eks-cluster"
   cluster_version = "1.26"
   vpc_id          = module.vpc.vpc_id
-  subnet_ids      = module.vpc.private_subnets  # Subnet configuration for the cluster
+  subnet_ids      = module.vpc.private_subnets
 
-  tags = {
-    Environment = "dev"
-    Name        = "eks-cluster"
-  }
-}
-
-# EKS Managed Node Group
-module "eks_node_group" {
-  source = "terraform-aws-modules/eks/aws//modules/eks-managed-node-group"
-  
-  cluster_name = module.eks.cluster_name
-  
   node_groups = {
     default = {
       desired_capacity = 2
@@ -59,5 +47,8 @@ module "eks_node_group" {
     }
   }
 
-  subnet_ids = module.vpc.private_subnets
+  tags = {
+    Environment = "dev"
+    Name        = "eks-cluster"
+  }
 }
